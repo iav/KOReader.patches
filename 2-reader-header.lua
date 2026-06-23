@@ -1501,11 +1501,13 @@ ReaderView.onFrontlightStateChanged = function(self, ...)
     end
     if isHeaderEnabled() and hasFrontlightItem()
             and self.ui and self.ui.dialog
+            and not Device.screen_saver_mode
             and not _frontlight_refresh_pending then
         _frontlight_refresh_pending = true
         UIManager:scheduleIn(0.15, function()
             _frontlight_refresh_pending = false
-            if isHeaderEnabled() and self.ui and self.ui.dialog then
+            if isHeaderEnabled() and self.ui and self.ui.dialog
+                    and not Device.screen_saver_mode then
                 UIManager:setDirty(self.ui.dialog, "ui")
             end
         end)

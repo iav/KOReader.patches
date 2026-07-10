@@ -28,6 +28,30 @@ local T = require("ffi/util").template
 local ReaderView = require("apps/reader/modules/readerview")
 local ReaderMenu = require("apps/reader/modules/readermenu")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
+local LuaSettings = require("luasettings")
+local DataStorage = require("datastorage")
+
+-- Header settings live in their own file (koreader/settings/custom_header.lua)
+-- instead of bloating the global settings.reader.lua. A dedicated LuaSettings
+-- instance is NOT auto-flushed the way G_reader_settings is, so every write
+-- below is followed by an explicit :flush().
+local HeaderSettings = LuaSettings:open(DataStorage:getSettingsDir() .. "/custom_header.lua")
+-- Guards a once-per-session persistence of normalized defaults (getHeaderSettings runs on
+-- every header repaint, so we must not flush to disk each frame).
+local header_settings_saved = false
+
+-- One-time migration from the previous location (G_reader_settings["custom_header"]).
+-- Copy only if the new store is empty, but drop the old key whenever it still exists, so an
+-- interrupted migration (new store flushed, old key not yet deleted) is cleaned up on the next
+-- start instead of leaving the stale table in settings.reader.lua forever.
+if HeaderSettings:hasNot("custom_header") and G_reader_settings:has("custom_header") then
+    HeaderSettings:saveSetting("custom_header", G_reader_settings:readSetting("custom_header"))
+    HeaderSettings:flush()
+end
+if G_reader_settings:has("custom_header") then
+    G_reader_settings:delSetting("custom_header")
+    G_reader_settings:flush()
+end
 
 -- Available header items
 local HEADER_ITEMS = {
@@ -124,10 +148,12 @@ local header_defaults = {
 }
 
 local function getHeaderSettings()
-    local settings = G_reader_settings:readSetting("custom_header")
+    local settings = HeaderSettings:readSetting("custom_header")
     if not settings then
         settings = util.tableDeepCopy(header_defaults)
-        G_reader_settings:saveSetting("custom_header", settings)
+        HeaderSettings:saveSetting("custom_header", settings)
+        HeaderSettings:flush()
+        header_settings_saved = true
     end
     if not settings.items then settings.items = {"time", "battery", "spacer", "percentage"} end
     if not settings.separator_style then settings.separator_style = 1 end
@@ -222,16 +248,22 @@ local function getHeaderSettings()
         end
     end
     
-    -- Save settings if we cleaned anything
-    if cleaned then
-        G_reader_settings:saveSetting("custom_header", settings)
+    -- Persist the normalized table once per session (default fields filled above are
+    -- otherwise never written back, since this store is not part of G_reader_settings'
+    -- exit-time flush), plus whenever we just cleaned unknown keys. Guarded so the
+    -- per-repaint calls don't flush to disk every frame.
+    if cleaned or not header_settings_saved then
+        HeaderSettings:saveSetting("custom_header", settings)
+        HeaderSettings:flush()
+        header_settings_saved = true
     end
     
     return settings
 end
 
 local function saveHeaderSettings(settings)
-    G_reader_settings:saveSetting("custom_header", settings)
+    HeaderSettings:saveSetting("custom_header", settings)
+    HeaderSettings:flush()
 end
 
 local function isHeaderEnabled()

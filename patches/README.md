@@ -108,3 +108,24 @@ greyed out.
 
 Stock KOReader only draws progress in the *mosaic* view (`show_progress_in_mosaic`), never in the
 list view.
+
+---
+
+## `2-triple-shift-screenshot.lua`
+
+Takes a screenshot when **Shift is tapped three times** in a row, the way the stock Kindle
+interface does it. Keyboard devices only (`Device:hasKeyboard()`).
+
+KOReader's own shortcut is `Alt` + `Shift` + `G` — three keys at once, two of them on opposite
+sides of a Kindle Keyboard. Three taps of a single key need one finger and about a second.
+
+A *tap* is a press and release of Shift with nothing in between: any other key going down, any
+modifier already held at press time, and any key repeat (a held Shift) all clear the count. So
+`Shift` + `Home`, `Shift` + page-turn and capital letters keep working — verified on a Kindle 3.
+Three taps within 1.5 s send the standard `Screenshot` event, the same one the Dispatcher action
+sends, so the file lands in the usual place.
+
+Key events cannot express this in settings: KOReader binds *chords* (`{"Alt", "Shift", "G"}`), it
+has no notion of a key tapped N times, and a bare modifier press never reaches a widget — the
+input layer swallows it (`frontend/device/input.lua`, "handle modifier keys"). Hence a patch that
+wraps `Input:handleKeyBoardEv`.

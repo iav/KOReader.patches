@@ -111,6 +111,25 @@ list view.
 
 ---
 
+## `2-toc-arrow-expand.lua`
+
+Tree-view arrow keys in the table of contents on d-pad devices: **right expands** the focused
+node, **left collapses** it (swapped in a mirrored UI layout), and the focus stays on the node
+you just toggled instead of jumping to the top of the page.
+
+Without it, a collapsed node (►) can only be opened with `Hold` — on a non-touch Kindle that is
+the `Shift` + `Press` surrogate, which is neither discoverable nor documented in the menu. The
+centre key does not help: it is a page jump, because the synthetic tap it sends always lands in
+the middle of the row and never reaches the toggle zone on the left.
+
+Skipped on devices without a d-pad, and on `hasFewKeys` ones, where the left and right keys are
+already spoken for.
+
+Upstream: [koreader/koreader#15780](https://github.com/koreader/koreader/pull/15780). The patch
+**self-disables** once that lands — it returns early as soon as `ReaderToc.refocusTocNode` exists.
+
+---
+
 ## `2-thicker-focus-underline.lua`
 
 Makes the focus underline — the bar that marks the row the d-pad is standing on — thick enough

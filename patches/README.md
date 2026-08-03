@@ -111,6 +111,30 @@ list view.
 
 ---
 
+## `2-thicker-focus-underline.lua`
+
+Makes the focus underline — the bar that marks the row the d-pad is standing on — thick enough
+to see on an old eInk screen, **without thickening the separators between rows**.
+
+KOReader paints both with the same widget: every menu item ends in an `UnderlineContainer`, drawn
+in `line_color` normally and in black while the item holds the focus. At 167 dpi the stock line is
+1 px in `Menu` and 1.5 px elsewhere, which on a Pearl screen is barely distinguishable from the
+separator above it.
+
+Raising the size alone would fatten the separators too, so the patch instead has the container
+**reserve** the thick line's height while **painting** a thin one until the item is focused. The
+height never changes, so nothing reflows — which is what upstream ran into when it tried to swap
+the size in `MenuItem:onFocus` (see the commented-out attempt there) and backed the change out.
+
+Focused rows are drawn with `Size.line.focus_indicator`, KOReader's own "this is focused"
+thickness — the same one the CoverBrowser mosaic view already uses, and close to the bar the
+native Kindle UI puts under the selected row.
+
+Covers `Menu` (file browser, history, OPDS catalogs, plugin lists), `TouchMenuItem` and
+`ConfigDialog`. No-op on devices without a d-pad (`Device:hasDPad()`), where nothing walks a focus.
+
+---
+
 ## `2-triple-shift-screenshot.lua`
 
 Takes a screenshot when **Shift is tapped three times** in a row, the way the stock Kindle

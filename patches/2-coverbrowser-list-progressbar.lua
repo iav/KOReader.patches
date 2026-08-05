@@ -92,7 +92,9 @@ local function patch_coverbrowser(_plugin)
         local right_pad      = Screen:scaleBySize(10)       -- = wright_right_padding
         local corner_reserve = math.floor(self.height / 6)  -- = corner_mark_size (dogear)
         local gap_x          = Screen:scaleBySize(4)
-        local gap_y          = Screen:scaleBySize(3)
+        -- Clear the focus indicator strip: it is repainted on its own when the cursor
+        -- moves, and would erase the bottom of our frame without redrawing it.
+        local gap_y          = Screen:scaleBySize(2) + Size.line.focus_indicator
 
         local pos_x
         if BD.mirroredUILayout() then
